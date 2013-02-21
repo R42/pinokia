@@ -15,18 +15,23 @@
 static int spi_init(char * dev) {
   int fd;
 
+  uint8_t mode = LCD_SPI_MODE;
+  uint8_t bpw = LCD_SPI_BITS_PER_WORD;
+  uint32_t speed = LCD_SPI_SPEED;
+
+
   fd = open(dev, O_RDWR);
 
   if (fd < 0)
     return fd;
 
-  if (ioctl(fd, SPI_IOC_WR_MODE, LCD_SPI_MODE) < 0)
+  if (ioctl(fd, SPI_IOC_WR_MODE, &mode) < 0)
     return -1;
 
-  if (ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, LCD_SPI_BITS_PER_WORD) < 0)
+  if (ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &bpw) < 0)
     return -1;
 
-  if (ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, LCD_SPI_SPEED) < 0)
+  if (ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed) < 0)
     return -1;
 
   return fd;
