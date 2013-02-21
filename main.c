@@ -34,13 +34,13 @@ static int resetLcd() {
 
   usleep(200);
 
-  res = writeToFile("/sys/class/gpio/gpio4/value", "0");
+  res = writeToFile("/sys/class/gpio/gpio25/value", "0");
   if (res)
     return res;
 
   usleep(200);
 
-  res = writeToFile("/sys/class/gpio/gpio4/value", "1");
+  res = writeToFile("/sys/class/gpio/gpio25/value", "1");
   if (res)
     return res;
 
