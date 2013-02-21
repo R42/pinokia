@@ -26,9 +26,13 @@ static int resetLcd() {
   if (res)
     return res;
 
+  usleep(200);
+
   res = writeToFile("/sys/class/gpio/gpio25/direction", "out");
   if (res)
     return res;
+
+  usleep(200);
 
   res = writeToFile("/sys/class/gpio/gpio4/value", "0");
   if (res)

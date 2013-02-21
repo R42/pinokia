@@ -54,7 +54,7 @@ static void add_cmd(
   buf = *pbuf;
 
   bzero(tx, sizeof(struct spi_ioc_transfer));
-  tx->tx_buf = (uint64_t) buf;
+  tx->tx_buf = (uint32_t) buf;
   tx->len = len;
 
   ptx += 1;
