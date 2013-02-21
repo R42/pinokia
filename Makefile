@@ -5,5 +5,5 @@ all: pinokia
 clean:
 	rm pinokia
 
-pinokia: main.c
+pinokia: main.c driver.c
 	$(CC) -o pinokia driver.c main.c
