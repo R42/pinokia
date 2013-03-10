@@ -10,7 +10,8 @@
 
 #define LCD_SPI_BITS_PER_WORD 9
 #define LCD_SPI_MODE SPI_MODE_0
-#define LCD_SPI_SPEED 3000000
+#define LCD_SPI_SPEED 1
+// #define LCD_SPI_SPEED 3000000
 
 static int spi_init(char * dev) {
   int fd;
@@ -27,11 +28,17 @@ static int spi_init(char * dev) {
 
   if (ioctl(fd, SPI_IOC_WR_MODE, &mode) < 0)
     return -1;
+  if (ioctl(fd, SPI_IOC_RD_MODE, &mode) < 0)
+    return -1;
 
   if (ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &bpw) < 0)
     return -1;
+  if (ioctl(fd, SPI_IOC_RD_BITS_PER_WORD, &bpw) < 0)
+    return -1;
 
   if (ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed) < 0)
+    return -1;
+  if (ioctl(fd, SPI_IOC_RD_MAX_SPEED_HZ, &speed) < 0)
     return -1;
 
   return fd;
