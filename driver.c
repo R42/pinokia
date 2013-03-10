@@ -5,7 +5,9 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
+
 #include <errno.h>
+#include <stdio.h>
 
 #include "driver.h"
 
