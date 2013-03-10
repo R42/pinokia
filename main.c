@@ -135,8 +135,9 @@ int main(int argc, char * argv[]) {
     return 1;
   }
 
-  printf("Ready\n");
-  sleep(9);
+  printf("Ready. Press [return] to exit.\n");
+  getc(stdin);
+  // sleep(9);
 
   lcd_dispose(&lcd);
 
