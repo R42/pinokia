@@ -32,8 +32,10 @@ static int spi_init(char * dev) {
   if (ioctl(fd, SPI_IOC_RD_MODE, &mode) < 0)
     return -1;
 
-  if (ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &bpw) < 0)
+  if (ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &bpw) < 0) {
+    printf("ERRNO: %x\n", errno);
     return -1;
+  }
   if (ioctl(fd, SPI_IOC_RD_BITS_PER_WORD, &bpw) < 0)
     return -1;
 
