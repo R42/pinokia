@@ -64,9 +64,11 @@ static void add_cmd(
 
   bzero(tx, sizeof(struct spi_ioc_transfer));
   tx->tx_buf = (uint32_t) buf;
-  tx->rx_buf = ()NULL;
+  tx->rx_buf = (uint32_t) 0;
   tx->len = len;
   tx->bits_per_word = LCD_SPI_BITS_PER_WORD;
+  tx->speed_hz = LCD_SPI_SPEED;
+  tx->delay_usecs = (uint16_t) 0;
 
   ptx += 1;
   pbuf += len;
