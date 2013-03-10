@@ -54,6 +54,8 @@ static void add_cmd(
   uint32_t len;
   int i;
 
+printf("ptx: %8x\n", *ptx);
+
   if (!data)
     data_len = 0;
 
