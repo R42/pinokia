@@ -70,8 +70,8 @@ static void add_cmd(
   tx->speed_hz = LCD_SPI_SPEED;
   tx->delay_usecs = (uint16_t) 0;
 
-  ptx += 1;
-  pbuf += len;
+  *ptx += 1;
+  *pbuf += len;
 
   buf[0] = ((uint16_t)cmd & 0x00FF);
   for (i=0; i<data_len; ++i)
