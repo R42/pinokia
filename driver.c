@@ -5,20 +5,22 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
+
 #include <errno.h>
+#include <stdio.h>
 
 #include "driver.h"
 
 #define LCD_SPI_BITS_PER_WORD 9
 #define LCD_SPI_MODE SPI_MODE_0
-#define LCD_SPI_SPEED 1
+#define LCD_SPI_SPEED 3815
 // #define LCD_SPI_SPEED 3000000
 
 static int spi_init(char * dev) {
   int fd;
 
   uint8_t mode = LCD_SPI_MODE;
-  uint8_t bpw = LCD_SPI_BITS_PER_WORD;
+  uint8_t bpw = 8; // has to be initialized with 8 - https://www.kernel.org/doc/Documentation/spi/spidev_test.c
   uint32_t speed = LCD_SPI_SPEED;
 
 
@@ -29,19 +31,11 @@ static int spi_init(char * dev) {
 
   if (ioctl(fd, SPI_IOC_WR_MODE, &mode) < 0)
     return -1;
-  if (ioctl(fd, SPI_IOC_RD_MODE, &mode) < 0)
-    return -1;
 
-  if (ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &bpw) < 0) {
-    printf("ERRNO: %x\n", errno);
-    return -1;
-  }
-  if (ioctl(fd, SPI_IOC_RD_BITS_PER_WORD, &bpw) < 0)
+  if (ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &bpw) < 0)
     return -1;
 
   if (ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed) < 0)
-    return -1;
-  if (ioctl(fd, SPI_IOC_RD_MAX_SPEED_HZ, &speed) < 0)
     return -1;
 
   return fd;
@@ -70,7 +64,9 @@ static void add_cmd(
 
   bzero(tx, sizeof(struct spi_ioc_transfer));
   tx->tx_buf = (uint32_t) buf;
+  tx->rx_buf = ()NULL;
   tx->len = len;
+  tx->bits_per_word = LCD_SPI_BITS_PER_WORD;
 
   ptx += 1;
   pbuf += len;
