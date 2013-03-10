@@ -75,9 +75,9 @@ printf("ptx: %8x\n", *ptx);
   *ptx += 1;
   *pbuf += len;
 
-  buf[0] = ((uint16_t)cmd & 0x00FF);
-  for (i=0; i<data_len; ++i)
-    buf[i+1] = ((uint16_t)(data[i]) & 0x00FF) | 0x0100;
+  // buf[0] = ((uint16_t)cmd & 0x00FF);
+  // for (i=0; i<data_len; ++i)
+  //   buf[i+1] = ((uint16_t)(data[i]) & 0x00FF) | 0x0100;
 }
 
 
@@ -178,7 +178,7 @@ int lcd_init(LCD *lcd, char *dev, int type) {
   // display on
   add_cmd(&ptx, &pbuf, DISON, NULL, 0);
 
-  return ioctl(lcd->fd, SPI_IOC_MESSAGE(ptx - tx), tx);
+  return 0;//ioctl(lcd->fd, SPI_IOC_MESSAGE(ptx - tx), tx);
 }
 
 void lcd_dispose(LCD *lcd) {
