@@ -21,34 +21,35 @@ static int writeToFile(char *filename, char *what) {
 static int resetLcd() {
 
   int res;
+  int delay_between_commands = 200 * 1000;
 
   printf("Exporting gpio25\n");
   res = writeToFile("/sys/class/gpio/export", "25");
   if (res)
     return res;
 
-  usleep(200);
+  usleep(delay_between_commands);
 
   printf("Setting gpio25 to output\n");
   res = writeToFile("/sys/class/gpio/gpio25/direction", "out");
   if (res)
     return res;
 
-  usleep(200);
+  usleep(delay_between_commands);
 
   printf("Setting gpio25 to 0\n");
   res = writeToFile("/sys/class/gpio/gpio25/value", "0");
   if (res)
     return res;
 
-  usleep(200);
+  usleep(delay_between_commands);
 
   printf("Setting gpio25 to 1\n");
   res = writeToFile("/sys/class/gpio/gpio25/value", "1");
   if (res)
     return res;
 
-  usleep(200);
+  usleep(delay_between_commands);
 
   printf("Unexporting gpio25\n");
   res = writeToFile("/sys/class/gpio/unexport", "25");

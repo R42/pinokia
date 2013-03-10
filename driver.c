@@ -171,7 +171,7 @@ int lcd_init(LCD *lcd, char *dev, int type) {
   // nop
   add_cmd(&ptx, &pbuf, NOP, NULL, 0);
 
-  usleep(200);
+  usleep(200 * 1000);
 
   // display on
   add_cmd(&ptx, &pbuf, DISON, NULL, 0);
