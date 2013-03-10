@@ -22,30 +22,35 @@ static int resetLcd() {
 
   int res;
 
+  printf("Exporting gpio25\n");
   res = writeToFile("/sys/class/gpio/export", "25");
   if (res)
     return res;
 
   usleep(200);
 
+  printf("Setting gpio25 to output\n");
   res = writeToFile("/sys/class/gpio/gpio25/direction", "out");
   if (res)
     return res;
 
   usleep(200);
 
+  printf("Setting gpio25 to 0\n");
   res = writeToFile("/sys/class/gpio/gpio25/value", "0");
   if (res)
     return res;
 
   usleep(200);
 
+  printf("Setting gpio25 to 1\n");
   res = writeToFile("/sys/class/gpio/gpio25/value", "1");
   if (res)
     return res;
 
   usleep(200);
 
+  printf("Unexporting gpio25\n");
   res = writeToFile("/sys/class/gpio/unexport", "25");
   if (res)
     return res;
