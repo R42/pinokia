@@ -9,6 +9,9 @@
 #include <errno.h>
 #include <stdio.h>
 
+#include <time.h>
+#include <stdlib.h>
+
 #include "driver.h"
 
 #define LCD_SPI_BITS_PER_WORD 9
@@ -39,6 +42,11 @@ static int spi_init(char * dev) {
     return -1;
 
   return fd;
+}
+
+static void send_cmd() {
+  
+  return ioctl(lcd->fd, SPI_IOC_MESSAGE(ptx - tx), tx);
 }
 
 static void add_cmd(
@@ -93,6 +101,7 @@ int lcd_clear(LCD *lcd, int color) {
   uint32_t i;
 
   for(i=0; i < ramwr_data_len; i+=3) {
+    color = rand();
     ramwr_data[i+0] = (color >> 4) & 0xFF;
     ramwr_data[i+1] = ((color & 0x0F) << 4) | (color >> 8);
     ramwr_data[i+2] = color & 0x0FF;
@@ -171,12 +180,18 @@ int lcd_init(LCD *lcd, char *dev, int type) {
   // nop
   add_cmd(&ptx, &pbuf, NOP, NULL, 0);
 
+  if (ioctl(lcd->fd, SPI_IOC_MESSAGE(ptx - tx), tx) < 0)
+    return -1;
+
   usleep(200 * 1000);
+
+  ptx = tx;
+  pbuf = buf;
 
   // display on
   add_cmd(&ptx, &pbuf, DISON, NULL, 0);
 
-  return 0;//ioctl(lcd->fd, SPI_IOC_MESSAGE(ptx - tx), tx);
+  return ioctl(lcd->fd, SPI_IOC_MESSAGE(ptx - tx), tx);
 }
 
 void lcd_dispose(LCD *lcd) {
