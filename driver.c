@@ -14,17 +14,43 @@
 
 #include "driver.h"
 
+// https://www.kernel.org/doc/Documentation/spi/spidev
+
+#define LCD_SPI_MODE      SPI_MODE_0
+#define LCD_SPI_LSB_FIRST 0 // MSB-first
+
+#define LCD_SPI_INIT_BITS_PER_WORD 8
 #define LCD_SPI_BITS_PER_WORD 9
-#define LCD_SPI_MODE SPI_MODE_0
-// #define LCD_SPI_SPEED 3815 // Minimum
-// #define LCD_SPI_SPEED 3000000 // From the LCD datasheet
-#define LCD_SPI_SPEED 100000
+
+// #define LCD_SPI_SPEED 3815 // Tested minimum
+// #define LCD_SPI_SPEED 3 * 1000 * 1000 // From the LCD datasheet
+#define LCD_SPI_SPEED 1000 * 1000
+
+//#define LCD_SPI_STRIDE 2048 // Tested maximum
+#define LCD_SPI_STRIDE 1
+
+#define LCD_SPI_DELAY_USECS 0
+
+#define LCD_SPI_CS_CHANGE 1 // Don't clear CS between messages
+
+static struct spi_ioc_transfer tx = {
+  .tx_buf        = 0,
+  .rx_buf        = 0,
+  .len           = 0,
+  .delay_usecs   = LCD_SPI_DELAY_USECS,
+  .speed_hz      = LCD_SPI_SPEED,
+  .bits_per_word = LCD_SPI_BITS_PER_WORD,
+  .cs_change     = LCD_SPI_CS_CHANGE,
+};
 
 static int spi_init(char * dev) {
   int fd;
 
   uint8_t mode = LCD_SPI_MODE;
-  uint8_t bpw = 8; // has to be initialized with 8 - https://www.kernel.org/doc/Documentation/spi/spidev_test.c
+  uint8_t lsb_first = LCD_SPI_LSB_FIRST;
+  // has to be initialized with 8 (LCD_SPI_INIT_BITS_PER_WORD)
+  // @see https://www.kernel.org/doc/Documentation/spi/spidev_test.c
+  uint8_t bpw = LCD_SPI_INIT_BITS_PER_WORD;
   uint32_t speed = LCD_SPI_SPEED;
 
 
@@ -36,6 +62,9 @@ static int spi_init(char * dev) {
   if (ioctl(fd, SPI_IOC_WR_MODE, &mode) < 0)
     return -1;
 
+  if (ioctl(fd, SPI_IOC_WR_LSB_FIRST, &lsb_first) < 0)
+    return -1;
+
   if (ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &bpw) < 0)
     return -1;
 
@@ -45,57 +74,33 @@ static int spi_init(char * dev) {
   return fd;
 }
 
-static void send_cmd(LCD *lcd,
-                     uint8_t cmd,
-                     unsigned char *data,
-                     unsigned int data_len) {
+static void send_cmd(LCD *lcd, uint8_t cmd) {
+  uint16_t cmd_word = cmd;
 
-  uint32_t stride = 1;//2 * 1024; // Max = 2048
-  uint32_t len, i;
-  uint16_t buf[1 + data_len];
-  struct spi_ioc_transfer tx;
+  tx.tx_buf = (uint32_t) &cmd_word;
+  tx.len    = 2;
 
-  buf[0] = cmd;
-  for (i = 0; i < data_len; ++i)
-    buf[i + 1] = data[i] | 0x0100;
-  len = data_len + 1;
+  if (ioctl(lcd->fd, SPI_IOC_MESSAGE(1), &tx) < 0) {
+    perror("Error sending SPI message");
+    exit(1);
+  }
+}
 
-  bzero(&tx, sizeof(struct spi_ioc_transfer));
-  tx.tx_buf = (uint32_t) buf;
-  tx.rx_buf = (uint32_t) 0;
-  tx.len = 2;//len;
-  tx.bits_per_word = LCD_SPI_BITS_PER_WORD;
-  tx.speed_hz = LCD_SPI_SPEED;
-  tx.delay_usecs = (uint16_t) 0;
+static void send_data(LCD *lcd, uint8_t data) {
+  uint16_t data_word = 0x100 | data;
 
-  for (i = 0; i < len; i += stride) {
-    tx.tx_buf = (uint32_t) &buf[i];
-    tx.len = 2 * (i + stride > len ? len - i : stride);
+  tx.tx_buf = (uint32_t) &data_word;
+  tx.len    = 2;
 
-    if (ioctl(lcd->fd, SPI_IOC_MESSAGE(1), &tx) < 0) {
-      perror("Error sending SPI message");
-      exit(1);
-    }
+  if (ioctl(lcd->fd, SPI_IOC_MESSAGE(1), &tx) < 0) {
+    perror("Error sending SPI message");
+    exit(1);
   }
 }
 
 int lcd_clear(LCD *lcd, int color) {
   uint8_t paset, caset, ramwr;
-
-  uint32_t ramwr_data_len = ((131 * 131) / 2) * 3;
-
-  uint8_t xaset_data[] = { 0, 131 };
-  uint8_t ramwr_data[ramwr_data_len];
-
-
   uint32_t i;
-
-  for(i=0; i < ramwr_data_len; i+=3) {
-    color = rand();
-    ramwr_data[i+0] = (color >> 4) & 0xFF;
-    ramwr_data[i+1] = ((color & 0x0F) << 4) | (color >> 8);
-    ramwr_data[i+2] = color & 0x0FF;
-  }
 
   if (lcd->type == TYPE_EPSON) {
     paset = PASET;
@@ -107,12 +112,69 @@ int lcd_clear(LCD *lcd, int color) {
     ramwr = RAMWRP;
   }
 
-  send_cmd(lcd, paset, xaset_data, 2);
-  send_cmd(lcd, caset, xaset_data, 2);
-  send_cmd(lcd, ramwr, ramwr_data, 0);
+  send_cmd(lcd, paset);
+  send_data(lcd, 0);
+  send_data(lcd, 131);
+  send_cmd(lcd, caset);
+  send_data(lcd, 0);
+  send_data(lcd, 131);
+  send_cmd(lcd, ramwr);
+
+  for(i = 0; i < (131 * 131) / 2; i++) {
+    color = (i * 2) & 0xfff;
+    send_data(lcd, (color >> 4) & 0xFF);
+    send_data(lcd, ((color & 0x0F) << 4) | (color >> 8));
+    send_data(lcd, color & 0x0FF);
+    if (i % 131 == 0) {
+      printf(".");
+      fflush(stdout);
+    }
+  }
+  printf("\n");
+
 
   return 0;
 }
+
+int lcd_set_pixel(LCD *lcd, uint8_t x, uint8_t y, uint16_t color) {
+  uint8_t paset, caset, ramwr;
+
+  if (lcd->type == TYPE_EPSON) {
+    paset = PASET;
+    caset = CASET;
+    ramwr = RAMWR;
+  } else {
+    paset = PASETP;
+    caset = CASETP;
+    ramwr = RAMWRP;
+  }
+
+  send_cmd(lcd, paset); // page start/end ram
+  send_data(lcd, x);
+  send_data(lcd, ENDPAGE);
+
+  send_cmd(lcd, caset); // column start/end ram
+  send_data(lcd, y);
+  send_data(lcd, ENDCOL);
+
+  send_cmd(lcd, ramwr);
+
+
+  if (lcd->type == TYPE_EPSON) {
+    send_data(lcd, (color >> 4) & 0x00ff);
+    send_data(lcd, ((color & 0x0f) << 4) | (color >> 8));
+    send_data(lcd, color & 0x0ff);
+    // send_data(lcd, color);
+    // send_data(lcd, NOP);
+    // send_data(lcd, NOP);
+  } else {
+    send_data(lcd, (uint8_t) ((color >> 4) & 0x00FF));
+    send_data(lcd, (uint8_t) (((color & 0x0F) << 4) | 0x00));
+  }
+
+  return 0;
+}
+
 
 int lcd_init(LCD *lcd, char *dev, int type) {
 
@@ -124,48 +186,76 @@ int lcd_init(LCD *lcd, char *dev, int type) {
     return lcd->fd;
 
   // display control
-  // 12 = 1100 - CL dividing ratio [don't divide] switching period 8H (default)
-  unsigned char disctl_data[] = { 0x0c, 0x20, 0x00, 0x01 };
-  send_cmd(lcd, DISCTL, disctl_data, sizeof(disctl_data));
+  send_cmd(lcd, DISCTL);
+  send_data(lcd, 0x0c);  // 12 = 1100 - CL dividing ratio [don't divide] switching period 8H (default)
+  send_data(lcd, 0x20);
+  send_data(lcd, 0x00);
+
+  send_data(lcd, 0x01);
 
   // common scanning direction
-  unsigned char comscn_data[] = { 0x01 };
-  send_cmd(lcd, COMSCN, comscn_data, sizeof(comscn_data));
+  send_cmd(lcd, COMSCN);
+  send_data(lcd, 0x01);
 
   // internal oscillator ON
-  send_cmd(lcd, OSCON, NULL, 0);
+  send_cmd(lcd, OSCON);
 
-  // sleep out
-  send_cmd(lcd, SLPOUT, NULL, 0);
+  // sleep out (EPSON)
+  send_cmd(lcd, SLPOUT);
 
-  // power ctrl
-  // everything on, no external reference resistors
-  unsigned char pwrctr_data[] = { 0x0F };
-  send_cmd(lcd, PWRCTR, pwrctr_data, sizeof(pwrctr_data));
+  // sleep out (PHILIPS)
+  send_cmd(lcd, SLEEPOUT);
 
-  // invert display mode
-  send_cmd(lcd, DISINV, NULL, 0);
+  // power ctrl (EPSON)
+  send_cmd(lcd, PWRCTR);
+  send_data(lcd, 0x0F); // everything on, no external reference resistors
 
-  // data control
-  // - 0x03 - correct for normal sin7
-  // - 0x00 - normal RGB arrangement
-  // - 0x02 - 16-bit Grayscale Type A
-  unsigned char datctl_data[] = { 0x03, 0x00, 0x02, 0xc8, 0x02 };
-  send_cmd(lcd, DATCTL, datctl_data, sizeof(datctl_data));
+  // booset on (PHILLIPS)
+  send_cmd(lcd, BSTRON);
 
-  // electronic volume, this is the contrast/brightness
-  // - 0x24 - volume (contrast) setting - fine tuning, original
-  // - 0x03 - internal resistor ratio - coarse adjustment
-  unsigned char volctr_data[] = { 0x24, 0x03, 0x30 };
-  send_cmd(lcd, VOLCTR, volctr_data, sizeof(volctr_data));
+  // invert display mode (EPSON)
+  send_cmd(lcd, DISINV);
 
-  // nop
-  send_cmd(lcd, NOP, NULL, 0);
+  // invert display mode (PHILLIPS)
+  send_cmd(lcd, INVON);
+
+  // data control (EPSON)
+  send_cmd(lcd, DATCTL);
+  send_data(lcd, 0x03); // correct for normal sin7
+  send_data(lcd, 0x00); // normal RGB arrangement
+  // send_data(lcd, 0x01); // 8-bit Grayscale [not used]
+  send_data(lcd, 0x02); // 16-bit Grayscale Type A
+
+  // memory access control (PHILLIPS)
+  send_cmd(lcd, MADCTL);
+  send_data(lcd, 0xc8);
+
+  //  color mode (PHILLIPS)
+  send_cmd(lcd, COLMOD);
+  send_data(lcd, 0x02);
+
+  // electronic volume, this is the contrast/brightness (EPSON)
+  send_cmd(lcd, VOLCTR);
+  send_data(lcd, 0x24); // volume (contrast) setting - fine tuning, original
+  send_data(lcd, 0x03); // internal resistor ratio - coarse adjustment
+
+  // set contrast (PHILLIPS)
+  send_cmd(lcd, VOLCTR);
+  send_data(lcd, 0x30);
+
+  // nop (EPSON)
+  send_cmd(lcd, NOP);
+
+  // nopp (PHILLIPS)
+  send_cmd(lcd, NOPP);
 
   usleep(200 * 1000);
 
-  // display on
-  send_cmd(lcd, DISON, NULL, 0);
+  // display on (EPSON)
+  send_cmd(lcd, DISON);
+
+  // display on (PHILLIPS)
+  send_cmd(lcd, DISPON);
 
   return 0;
 }

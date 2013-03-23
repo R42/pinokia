@@ -128,8 +128,11 @@ int main(int argc, char * argv[]) {
     return 1;
   }
 
+  printf("Ready. Press [return] to clear the screen.\n");
+  getc(stdin);
+
   printf("Setting the screen green\n");
-  res = lcd_clear(&lcd, GREEN);
+  res = lcd_set_pixel(&lcd, 10, 10, GREEN);
   if (res < 0) {
     perror("Failed to clear LCD.");
     return 1;

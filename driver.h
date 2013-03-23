@@ -1,6 +1,8 @@
 #ifndef _DRIVER_H_
 #define _DRIVER_H_
 
+#include <stdint.h>
+
 // LCD Dimension Definitions
 #define ROW_LENGTH 132
 #define COL_HEIGHT 132
@@ -24,6 +26,10 @@
 #define TYPE_EPSON 1
 
 // EPSON Controller Definitions
+
+// Datasheet
+// http://www.sparkfun.com/datasheets/LCD/S1D15G10D08BE_TM_MF1493_03.pdf
+
 #define DISON 0xAF
 #define DISOFF  0xAE
 #define DISNOR  0xA6
@@ -87,6 +93,7 @@ typedef struct lcd {
 
 int lcd_init(LCD *lcd, char *dev, int type);
 int lcd_clear(LCD *lcd, int color);
+int lcd_set_pixel(LCD *lcd, uint8_t x, uint8_t y, uint16_t color);
 void lcd_dispose(LCD *lcd);
 
 #endif
