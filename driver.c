@@ -23,8 +23,14 @@
 #define LCD_SPI_BITS_PER_WORD 9
 
 // #define LCD_SPI_SPEED 3815 // Tested minimum
+
+// According to:
+// https://projects.drogon.net/raspberry-pi/wiringpi/spi-library/
+// The range is 500_0000 -> 32_000_000
+#define LCD_SPI_SPEED 500 * 1000
+
 // #define LCD_SPI_SPEED 3 * 1000 * 1000 // From the LCD datasheet
-#define LCD_SPI_SPEED 1000 * 1000
+// #define LCD_SPI_SPEED 1000 * 1000
 
 //#define LCD_SPI_STRIDE 2048 // Tested maximum
 #define LCD_SPI_STRIDE 1
