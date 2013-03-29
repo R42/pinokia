@@ -1,14 +1,15 @@
-CC = gcc -g -Wall
+CFLAGS = -g -Wall
 
 .PHONY: clean
 
-all: pinokia
+all: pinokia sendword
 
 clean:
-	rm pinokia
+	rm pinokia *.o
 
-pinokia: main.c driver.c
-	$(CC) -o pinokia driver.c main.c
+pinokia: main.o driver.o modules.o
+
+sendword: sendword.o modules.o
 
 it: all
 run: all
