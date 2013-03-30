@@ -9,17 +9,19 @@ clean:
 
 modules.o: modules.c
 
+spi.o: spi.c
+
 driver.o: driver.c
 
 main.o: main.c
 
 sendword.o: sendword.c
 
-pinokia: main.o driver.o modules.o
-	$(CC) $(CFLAGS) -o $@ main.o driver.o modules.o
+pinokia: main.o driver.o modules.o spi.o
+	$(CC) $(CFLAGS) -o $@ main.o driver.o modules.o spi.o
 
-sendword: sendword.o modules.o
-	$(CC) $(CFLAGS) -o $@ sendword.o modules.o
+sendword: sendword.o modules.o spi.o
+	$(CC) $(CFLAGS) -o $@ sendword.o modules.o spi.o
 
 it: all
 run: all

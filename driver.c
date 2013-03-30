@@ -11,96 +11,23 @@
 
 #include <time.h>
 
+#include "spi.h"
+
 #include "driver.h"
 
-// https://www.kernel.org/doc/Documentation/spi/spidev
-
-#define LCD_SPI_MODE      SPI_MODE_0
-#define LCD_SPI_LSB_FIRST 0 // MSB-first
-
-#define LCD_SPI_INIT_BITS_PER_WORD 8
-#define LCD_SPI_BITS_PER_WORD 9
-
-// #define LCD_SPI_SPEED 3815 // Tested minimum
-
-// According to:
-// https://projects.drogon.net/raspberry-pi/wiringpi/spi-library/
-// The range is 500_0000 -> 32_000_000
-#define LCD_SPI_SPEED 500 * 1000
-
-// #define LCD_SPI_SPEED 3 * 1000 * 1000 // From the LCD datasheet
-// #define LCD_SPI_SPEED 1000 * 1000
-
-//#define LCD_SPI_STRIDE 2048 // Tested maximum
-#define LCD_SPI_STRIDE 1
-
-#define LCD_SPI_DELAY_USECS 0
-
-#define LCD_SPI_CS_CHANGE 1 // Don't clear CS between messages
-
-static struct spi_ioc_transfer tx = {
-  .tx_buf        = 0,
-  .rx_buf        = 0,
-  .len           = 0,
-  .delay_usecs   = LCD_SPI_DELAY_USECS,
-  .speed_hz      = LCD_SPI_SPEED,
-  .bits_per_word = LCD_SPI_BITS_PER_WORD,
-  .cs_change     = LCD_SPI_CS_CHANGE,
-};
-
-static int spi_init(char * dev) {
-  int fd;
-
-  uint8_t mode = LCD_SPI_MODE;
-  uint8_t lsb_first = LCD_SPI_LSB_FIRST;
-  // has to be initialized with 8 (LCD_SPI_INIT_BITS_PER_WORD)
-  // @see https://www.kernel.org/doc/Documentation/spi/spidev_test.c
-  uint8_t bpw = LCD_SPI_INIT_BITS_PER_WORD;
-  uint32_t speed = LCD_SPI_SPEED;
-
-
-  fd = open(dev, O_RDWR);
-
-  if (fd < 0)
-    return fd;
-
-  if (ioctl(fd, SPI_IOC_WR_MODE, &mode) < 0)
-    return -1;
-
-  if (ioctl(fd, SPI_IOC_WR_LSB_FIRST, &lsb_first) < 0)
-    return -1;
-
-  if (ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &bpw) < 0)
-    return -1;
-
-  if (ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed) < 0)
-    return -1;
-
-  return fd;
+static void send(LCD *lcd, word) {
+  if (send_word(lcd->fd, word) < 0) {
+    perror("Error sending SPI message");
+    exit(1);
+  }
 }
 
 static void send_cmd(LCD *lcd, uint8_t cmd) {
-  uint16_t cmd_word = cmd;
-
-  tx.tx_buf = (uint32_t) &cmd_word;
-  tx.len    = 2;
-
-  if (ioctl(lcd->fd, SPI_IOC_MESSAGE(1), &tx) < 0) {
-    perror("Error sending SPI message");
-    exit(1);
-  }
+  send(lcd, cmd)
 }
 
 static void send_data(LCD *lcd, uint8_t data) {
-  uint16_t data_word = 0x100 | data;
-
-  tx.tx_buf = (uint32_t) &data_word;
-  tx.len    = 2;
-
-  if (ioctl(lcd->fd, SPI_IOC_MESSAGE(1), &tx) < 0) {
-    perror("Error sending SPI message");
-    exit(1);
-  }
+  send(lcd, (uint16_t) data | 0x100);
 }
 
 int lcd_clear(LCD *lcd, int color) {
