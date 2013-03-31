@@ -27,9 +27,6 @@ const uint32_t SPEED     = SPI_SPEED_3815HZ;
 const uint32_t BPW       = SPI_BITS_PER_WORD_9;
 const uint32_t CS_CHANGE = SPI_CS_CHANGE;
 
-
-static struct spi_ioc_transfer transfer;
-
 int spi_init(const char* dev) {
   uint8_t  mode      = SPI_MODE_0; // => not SPI_CPOL and not SPI_CPHA
   uint8_t  lsb_first = SPI_MSB_FIRST;
@@ -55,15 +52,15 @@ int spi_init(const char* dev) {
   return fd;
 } 
 
-int send_word(int fd, uint32_t word) {
+int spi_send_word(int fd, uint16_t word) {
   struct spi_ioc_transfer tr = {
-    .tx_buf = (unsigned long) tx,
+    .tx_buf = (unsigned long) &word,
     .rx_buf = (unsigned long) 0,
-    .len = 4,
+    .len = 2,
     .delay_usecs = DELAY,
     .speed_hz = SPEED,
     .bits_per_word = BPW,
-    .cs_change = 1,
+    .cs_change = 0,
   };
 
   if (ioctl(fd, SPI_IOC_MESSAGE(1), &tr) < 0) {

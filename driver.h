@@ -91,7 +91,7 @@ typedef struct lcd {
   char type;
 } LCD;
 
-int lcd_init(LCD *lcd, char *dev, int type);
+int lcd_init(LCD *lcd, char *dev, int reset_pin, int type);
 int lcd_clear(LCD *lcd, int color);
 int lcd_set_pixel(LCD *lcd, uint8_t x, uint8_t y, uint16_t color);
 void lcd_dispose(LCD *lcd);

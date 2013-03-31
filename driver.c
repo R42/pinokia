@@ -11,19 +11,43 @@
 
 #include <time.h>
 
+#include "gpio.h"
 #include "spi.h"
-
 #include "driver.h"
 
-static void send(LCD *lcd, word) {
-  if (send_word(lcd->fd, word) < 0) {
+static int lcd_reset(int reset_pin) {
+  if (gpio_setup() != 0) {
+    perror("Couldn't setup GPIO");
+    exit(1);
+  }
+
+  gpio_set_output(reset_pin);
+
+  int reset_pin_mask = 1 << reset_pin;
+  int delay_between_commands = 200 * 1000;
+
+  printf("Setting RESET low\n");
+  gpio_clear(reset_pin_mask);
+
+  usleep(delay_between_commands);
+
+  printf("Setting RESET high\n");
+  gpio_set(reset_pin_mask);
+
+  usleep(delay_between_commands);
+
+  return 0;
+}
+
+static void send(LCD *lcd, uint16_t word) {
+  if (spi_send_word(lcd->fd, word) < 0) {
     perror("Error sending SPI message");
     exit(1);
   }
 }
 
 static void send_cmd(LCD *lcd, uint8_t cmd) {
-  send(lcd, cmd)
+  send(lcd, cmd);
 }
 
 static void send_data(LCD *lcd, uint8_t data) {
@@ -108,7 +132,12 @@ int lcd_set_pixel(LCD *lcd, uint8_t x, uint8_t y, uint16_t color) {
 }
 
 
-int lcd_init(LCD *lcd, char *dev, int type) {
+int lcd_init(LCD *lcd, char *dev, int reset_pin, int type) {
+  int res = lcd_reset(reset_pin);
+  if (res < 0) {
+    perror("Failed to reset LCD.");
+    return 1;
+  }
 
   bzero(lcd, sizeof(LCD));
   lcd->dev = dev;
@@ -116,6 +145,9 @@ int lcd_init(LCD *lcd, char *dev, int type) {
   lcd->fd = spi_init(dev);
   if (lcd->fd < 0)
     return lcd->fd;
+
+  // NOP
+  send_cmd(lcd, NOP);
 
   // display control
   send_cmd(lcd, DISCTL);

@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #include "modules.h"
 #include "spi.h"
@@ -17,7 +20,7 @@ int main(int argc, char* argv[]) {
   printf("Sending word...\n");
   int i;
   for (i = 0; i < 2; i++) {
-    if (send_word(fd, 0xAA28) < 0) {
+    if (spi_send_word(fd, 0xAA28) < 0) {
       perror("Error sending SPI message");
       exit(1);
     }

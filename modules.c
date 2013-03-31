@@ -32,10 +32,15 @@ static int moduleLoaded(char *modName) {
 static void loadModule(char * module) {
   char cmd[80];
 
-  if (!moduleLoaded(module)) {
-    sprintf(cmd, "modprobe %s", module);
-    system(cmd);
+  if (moduleLoaded(module)) {
+    return 0;
   }
+
+  printf("Loading module: %s", module);
+  sprintf(cmd, "modprobe %s", module);
+  system(cmd);
+
+  sleep(1);
 
   if (!moduleLoaded(module)) {
     fprintf(stderr, "Unable to load %s\n", module);
@@ -46,5 +51,4 @@ static void loadModule(char * module) {
 void loadSpiModules() {
   loadModule("spidev");
   loadModule("spi_bcm2708");
-  sleep(1);
 }
