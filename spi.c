@@ -28,7 +28,8 @@ const uint32_t BPW       = SPI_BITS_PER_WORD_9;
 const uint32_t CS_CHANGE = SPI_CS_CHANGE;
 
 int spi_init(const char* dev) {
-  uint8_t  mode      = SPI_MODE_0; // => not SPI_CPOL and not SPI_CPHA
+  uint8_t  mode      = SPI_CPOL; // => SPI_CPOL (per the EPSON data sheet)
+                                 //    not SPI_CPHA
   uint8_t  lsb_first = SPI_MSB_FIRST;
   uint8_t  bpw       = BPW;
   uint32_t speed     = SPEED;
