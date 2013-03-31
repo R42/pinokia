@@ -74,8 +74,8 @@ int lcd_clear(LCD *lcd, int color) {
   send_cmd(lcd, caset);
   send_data(lcd, 0);
   send_data(lcd, 131);
-  send_cmd(lcd, ramwr);
 
+  send_cmd(lcd, ramwr);
   for(i = 0; i < (131 * 131) / 2; i++) {
     color = (i * 2) & 0xfff;
     send_data(lcd, (color >> 4) & 0xFF);
@@ -87,7 +87,6 @@ int lcd_clear(LCD *lcd, int color) {
     }
   }
   printf("\n");
-
 
   return 0;
 }
@@ -226,4 +225,5 @@ int lcd_init(LCD *lcd, char *dev, int reset_pin, int type) {
 
 void lcd_dispose(LCD *lcd) {
   close(lcd->fd);
+  gpio_shutdown();
 }
