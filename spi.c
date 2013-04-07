@@ -8,13 +8,19 @@
 
 #include "spi.h"
 
+// Reference:
+//   https://www.kernel.org/doc/Documentation/spi/
+//   https://www.kernel.org/doc/Documentation/spi/spi-summary
+//   https://www.kernel.org/doc/Documentation/spi/spidev
+
+
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
 #define SPI_MSB_FIRST       0
 #define SPI_BITS_PER_WORD_8 8
 #define SPI_BITS_PER_WORD_9 9
 #define SPI_SPEED_500KHZ    500 * 1000 // Raspberry Pi minimum
-#define SPI_SPEED_1MHZ      1000 * 1000
+#define SPI_SPEED_6MHZ      6 * 1000 * 1000 // Rerported LCD Maximum
 #define SPI_SPEED_3815HZ    3815 // Linux minimum
 #define SPI_DELAY_0         0
 #define SPI_DELAY_MIN       2980 // Minimum tested value
@@ -23,7 +29,7 @@
                               // to the epson data sheets
 
 const uint32_t DELAY     = SPI_DELAY_0;
-const uint32_t SPEED     = SPI_SPEED_3815HZ;
+const uint32_t SPEED     = SPI_SPEED_6MHZ;
 const uint32_t BPW       = SPI_BITS_PER_WORD_9;
 const uint32_t CS_CHANGE = SPI_CS_CHANGE;
 
@@ -44,11 +50,11 @@ int spi_init(const char* dev) {
   if (ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &bpw      ) < 0) return -1;
   if (ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ , &speed    ) < 0) return -1;
 
-  printf("initializing device: %s\n"  , dev);
-  printf("spi mode: %d\n"             , mode);
-  printf("*lsb first: %d\n"           , lsb_first);
-  printf("bits per word: %d\n"        , bpw);
-  printf("max speed: %d Hz (%d KHz)\n", speed, speed/1000);
+  // printf("initializing device: %s\n"  , dev);
+  // printf("spi mode: %d\n"             , mode);
+  // printf("*lsb first: %d\n"           , lsb_first);
+  // printf("bits per word: %d\n"        , bpw);
+  // printf("max speed: %d Hz (%d KHz)\n", speed, speed/1000);
 
   return fd;
 } 

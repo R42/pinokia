@@ -66,7 +66,6 @@ int gpio_setup() {
   // Always use a volatile pointer!
   gpio = (volatile uint32_t *) gpio_map;
 
-  fprintf(stderr, "gpio set up.\n");
   return 0;
 }
 

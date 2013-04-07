@@ -22,8 +22,14 @@
 #define ORANGE 0xFA0
 #define PINK 0xF6A
 
-#define TYPE_PHILLIPS 0
-#define TYPE_EPSON 1
+
+#define SHIFT_TO_RED   8
+#define SHIFT_TO_GREEN 4
+#define SHIFT_TO_BLUE  0
+#define RGB(r,g,b) (((b) << SHIFT_TO_BLUE) + ((g) << SHIFT_TO_GREEN) + ((r) << SHIFT_TO_RED))
+
+#define TYPE_PHILIPS 0
+#define TYPE_EPSON   1
 
 // EPSON Controller Definitions
 
@@ -92,8 +98,8 @@ typedef struct lcd {
 } LCD;
 
 int lcd_init(LCD *lcd, char *dev, int reset_pin, int type);
-int lcd_clear(LCD *lcd, int color);
-int lcd_set_pixel(LCD *lcd, uint8_t x, uint8_t y, uint16_t color);
+void lcd_clear(LCD *lcd, int color);
+void lcd_set_pixel(LCD *lcd, uint8_t x, uint8_t y, uint16_t color);
 void lcd_dispose(LCD *lcd);
 
 #endif

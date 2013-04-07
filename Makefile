@@ -1,4 +1,5 @@
 CFLAGS = -g -Wall
+LDFLAGS = -g  -Wall -lm
 
 .PHONY: clean
 
@@ -20,10 +21,10 @@ main.o: main.c
 sendword.o: sendword.c
 
 pinokia: main.o driver.o modules.o gpio.o spi.o
-	$(CC) $(CFLAGS) -o $@ main.o driver.o modules.o gpio.o spi.o
+	$(CC) $(LDFLAGS) -o $@ main.o driver.o modules.o gpio.o spi.o
 
 sendword: sendword.o modules.o spi.o
-	$(CC) $(CFLAGS) -o $@ sendword.o modules.o spi.o
+	$(CC) $(LDFLAGS) -o $@ sendword.o modules.o spi.o
 
 it: all
 run: all
