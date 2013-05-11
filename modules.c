@@ -33,7 +33,7 @@ static void loadModule(char * module) {
   char cmd[80];
 
   if (moduleLoaded(module)) {
-    return 0;
+    return;
   }
 
   printf("Loading module: %s", module);

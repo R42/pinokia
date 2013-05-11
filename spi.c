@@ -61,13 +61,31 @@ int spi_init(const char* dev) {
 
 int spi_send_word(int fd, uint16_t word) {
   struct spi_ioc_transfer tr = {
-    .tx_buf = (unsigned long) &word,
-    .rx_buf = (unsigned long) 0,
-    .len = 2,
-    .delay_usecs = DELAY,
-    .speed_hz = SPEED,
+    .tx_buf        = (unsigned long) &word,
+    .rx_buf        = (unsigned long) 0,
+    .len           = 2,
+    .delay_usecs   = DELAY,
+    .speed_hz      = SPEED,
     .bits_per_word = BPW,
-    .cs_change = 0,
+    .cs_change     = 0,
+  };
+
+  if (ioctl(fd, SPI_IOC_MESSAGE(1), &tr) < 0) {
+    return -1;
+  }
+
+  return 0;
+}
+
+int spi_send_buffer(int fd, uint32_t len, void* data) {
+  struct spi_ioc_transfer tr = {
+    .tx_buf        = (unsigned long) data,
+    .rx_buf        = (unsigned long) 0,
+    .len           = 2 * len,
+    .delay_usecs   = DELAY,
+    .speed_hz      = SPEED,
+    .bits_per_word = BPW,
+    .cs_change     = 0,
   };
 
   if (ioctl(fd, SPI_IOC_MESSAGE(1), &tr) < 0) {

@@ -91,10 +91,16 @@
 #define DISCTR 0xB9
 #define EC 0xC0
 
+/* Maximum tested buffer size */
+#define MAX_BUFFER_SIZE 2048
+
 typedef struct lcd {
   char * dev;
   int fd;
   char type;
+
+  uint16_t buffer_pos;
+  uint16_t buffer[MAX_BUFFER_SIZE];
 } LCD;
 
 int lcd_init(LCD *lcd, char *dev, int reset_pin, int type);

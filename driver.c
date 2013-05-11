@@ -37,10 +37,15 @@ static int lcd_reset(int reset_pin) {
   return 0;
 }
 
+inline static void send(LCD *lcd, uint16_t word) __attribute__((always_inline));
+inline static void send_cmd(LCD *lcd, uint8_t cmd) __attribute__((always_inline));
+inline static void send_data(LCD *lcd, uint8_t data) __attribute__((always_inline));
+static void flush(LCD *lcd);
+
 static void send(LCD *lcd, uint16_t word) {
-  if (spi_send_word(lcd->fd, word) < 0) {
-    perror("Error sending SPI message");
-    exit(1);
+  lcd->buffer[lcd->buffer_pos++] = word;
+  if (lcd->buffer_pos == MAX_BUFFER_SIZE) {
+    flush(lcd);
   }
 }
 
@@ -50,6 +55,11 @@ static void send_cmd(LCD *lcd, uint8_t cmd) {
 
 static void send_data(LCD *lcd, uint8_t data) {
   send(lcd, (uint16_t) data | 0x100);
+}
+
+static void flush(LCD *lcd) {
+  spi_send_buffer(lcd->fd, lcd->buffer_pos, lcd->buffer);
+  lcd->buffer_pos = 0;
 }
 
 void lcd_clear(LCD *lcd, int color) {
@@ -68,17 +78,22 @@ void lcd_clear(LCD *lcd, int color) {
 
   send_cmd(lcd, paset);
   send_data(lcd, 0);
-  send_data(lcd, 131);
+  send_data(lcd, 132);
   send_cmd(lcd, caset);
   send_data(lcd, 0);
-  send_data(lcd, 131);
+  send_data(lcd, 132);
+
+  flush(lcd);
 
   send_cmd(lcd, ramwr);
-  for(i = 0; i < (131 * 131) / 2; i++) {
+  flush(lcd);
+  for(i = 0; i < (132 * 132) / 2; i++) {
     send_data(lcd, (color >> 4) & 0xFF);
     send_data(lcd, ((color & 0x0F) << 4) | (color >> 8));
     send_data(lcd, color & 0x0FF);
   }
+
+  flush(lcd);
 }
 
 void lcd_set_pixel(LCD *lcd, uint8_t x, uint8_t y, uint16_t color) {
@@ -110,6 +125,8 @@ void lcd_set_pixel(LCD *lcd, uint8_t x, uint8_t y, uint16_t color) {
     send_data(lcd, (uint8_t) ((color >> 4) & 0x00FF));
     send_data(lcd, (uint8_t) (((color & 0x0F) << 4) | 0x00));
   }
+
+  flush(lcd);
 }
 
 
@@ -180,6 +197,8 @@ int lcd_init(LCD *lcd, char *dev, int reset_pin, int type) {
   
     send_cmd(lcd, NOPP);     // nop(PHILLIPS)
   }
+
+  flush(lcd);
 
   return 0;
 }
