@@ -11,8 +11,11 @@
 
 #define fracf(x) ((x) - floorf(x))
 
-int main(int argc, char * argv[]) {
+int main(int argc, char ** argv) {
   int res;
+
+  int demo = argc == 1 ? 0 : atoi(argv[1]);
+
   LCD *lcd = (LCD *) malloc(sizeof(LCD));
 
   res = lcd_init(lcd, "/dev/spidev0.0", 25, TYPE_PHILIPS);
@@ -23,8 +26,9 @@ int main(int argc, char * argv[]) {
 
   lcd_clear(lcd, BLACK);
 
-  if (argc > 0 && strcmp("0", argv[1]) == 0) {
-    const int w = 130, h = 130;
+  const int w = 130, h = 130;
+
+  if (demo == 0) {
     uint32_t x, y, color;
     float r, g, b, s2 = sqrtf(2), dd = w * s2;
     for (x = 0; x < w; x++) {
@@ -40,15 +44,41 @@ int main(int argc, char * argv[]) {
         lcd_set_pixel(lcd, x + 1, y + 1, color);
       }
     }
-  } else {
+  } else if (demo == 1) {
     int i;
     int offset;
-    for (offset = 0; offset < 130 / 2; offset++) {
-      for (i = 130 - (2 * offset); i > 0; i--) {
-        lcd_set_pixel(lcd,   i + offset,   1 + offset, RED  );
-        lcd_set_pixel(lcd, 130 - offset,   i + offset, GREEN);
-        lcd_set_pixel(lcd,   i + offset, 130 - offset, BLUE );
-        lcd_set_pixel(lcd,   1 + offset,   i + offset, WHITE);
+    for (offset = 0; offset < w / 2; offset++) {
+      for (i = w - (2 * offset); i > 0; i--) {
+        lcd_set_pixel(lcd, i + offset, 1 + offset, RED  );
+        lcd_set_pixel(lcd, w - offset, i + offset, GREEN);
+        lcd_set_pixel(lcd, i + offset, h - offset, BLUE );
+        lcd_set_pixel(lcd, 1 + offset, i + offset, WHITE);
+      }
+    }
+  } else if (demo == 2) {
+    lcd_clear(lcd, RED);
+    sleep(2);
+    lcd_clear(lcd, GREEN);
+    sleep(2);
+    lcd_clear(lcd, BLUE);
+  } else if (demo == 3) {
+    int i, s = 1, e = 130;
+    for (i = s; i <= e; i++) {
+      lcd_set_pixel(lcd, i, s, RED);
+      lcd_set_pixel(lcd, i, e, RED);
+      lcd_set_pixel(lcd, s, i, RED);
+      lcd_set_pixel(lcd, e, i, RED);
+    }
+  } else {
+    int i;
+    for(;;) {
+      for (i = 0; i < 0x1000; i++) {
+        lcd_clear(lcd, i);
+        usleep(100 * 1000);
+      }
+      for (i = 0xfff; i >= 0; i--) {
+        lcd_clear(lcd, i);
+        usleep(100 * 1000);
       }
     }
   }
